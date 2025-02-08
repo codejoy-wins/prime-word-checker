@@ -1,0 +1,204 @@
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Global Styling */
+body {
+    font-family: 'Goldman', sans-serif;
+    background: linear-gradient(135deg, #141414, #1e1e1e);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column; /* Stacked layout for mobile-first */
+    justify-content: center;
+    align-items: center;
+    width: 100%; /* Ensure the app uses full width */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+/* Gizmo Container */
+.gizmo-container {
+    background: #222;
+    border: 2px solid #333;
+    border-radius: 15px;
+    padding: 20px;
+    max-width: 600px; /* Limit size for larger screens */
+    width: 100%; /* Full width on smaller screens */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+    text-align: center;
+}
+
+/* Header */
+.header h1 {
+    font-size: 1.8rem;
+    color: #0ef;
+    margin-bottom: 10px;
+}
+
+.header p {
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+/* Form Styling */
+.form {
+    margin: 20px 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #555;
+    border-radius: 10px;
+    background: #111;
+    color: #0ef;
+    font-size: 1rem;
+    text-align: center;
+    margin-right: 10px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+input[type="text"]:focus {
+    border-color: #0ef;
+    box-shadow: 0 0 10px #0ef;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #0ef, #07a);
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: linear-gradient(135deg, #07a, #0ef);
+    box-shadow: 0 0 12px #0ef;
+}
+
+/* Results Section */
+.result {
+    margin-top: 20px;
+    background: #1a1a1a;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.result h2 {
+    color: #0ef;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
+.result p {
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: #ddd;
+}
+
+/* Anagram List */
+ul.anagram-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+ul.anagram-list li {
+    padding: 10px;
+    margin-bottom: 5px;
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: #222;
+    transition: all 0.3s ease;
+}
+
+ul.anagram-list li:hover {
+    background: #333;
+    color: #0ef;
+}
+
+.anagram-common {
+    color: #0f0;
+    font-weight: bold;
+}
+
+.anagram-archaic {
+    color: #07a;
+}
+
+/* Prime Banner */
+.prime-banner {
+    background: #000;
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 255, 0, 0.5);
+    margin: 20px auto;
+    max-width: 90%; /* Ensures it fits within the screen */
+    word-wrap: break-word;
+}
+
+/* Prime Title Styling */
+.prime-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    white-space: nowrap; /* Prevents text wrapping */
+    font-size: clamp(2rem, 8vw, 5rem); /* Dynamically adjusts font size */
+    margin-bottom: 10px;
+    color: #32ff7e;
+    text-shadow: 0 0 20px #32ff7e, 0 0 40px #32ff7e;
+}
+
+/* Highlight for PRIME */
+.xp {
+    color: #32ff7e;
+    font-weight: bold;
+    margin-right: 10px;
+    text-shadow: 0 0 20px #32bbff, 0 0 40px #32ff7e;
+}
+
+/* Footer Styling - I want this to be desktop only and to the right of the gizmo.*/
+.footer {
+    position: relative;
+    right: -380px; /* Push the logo to the right of the gizmo */
+    top: -200px;
+}
+/* Logo Image Styling */
+.website-logo {
+    max-width: 150px;
+    height: auto;
+    cursor: pointer;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.website-logo:hover {
+    transform: scale(1.1);
+    opacity: 0.8;
+}
+
+/* Media query for mobile screens */
+@media (max-width: 768px) {
+    .footer {
+        position: static;
+        margin-top: 20px;
+        text-align: center;
+        display: block; /* Show footer only on mobile */
+    }
+
+    .gizmo-container {
+        max-width: 100%; /* Full width on mobile */
+        margin-bottom: 20px;
+    }
+}

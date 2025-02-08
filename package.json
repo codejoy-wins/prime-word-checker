@@ -1,0 +1,15 @@
+{
+    "name": "prime-word-checker",
+    "version": "1.0.0",
+    "description": "A web application to check prime words.",
+    "main": "server.js",
+    "dependencies": {
+        "express": "^4.18.2",
+        "node-fetch": "^3.3.2"
+    },
+    "scripts": {
+        "start": "node server.js"
+    },
+    "author": "Your Name",
+    "license": "MIT"
+}
