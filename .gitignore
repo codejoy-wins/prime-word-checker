@@ -1,2 +1,4 @@
-# Local Netlify folder
-.netlify
+node_modules/
+.netlify/
+data/anagrams.json
+.DS_Store
