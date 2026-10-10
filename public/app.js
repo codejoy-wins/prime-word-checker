@@ -1,4 +1,3 @@
-
 const form = document.getElementById("wordForm");
 const input = document.getElementById("wordInput");
 const result = document.getElementById("result");
@@ -62,10 +61,16 @@ form.addEventListener("submit", async event => {
           ? "anagram-common"
           : "anagram-archaic";
 
+        const definition = item.definition == null
+          ? "null"
+          : item.definition === ""
+            ? '""'
+            : item.definition;
+
         html += `
           <li>
             <strong class="${wordClass}">${escapeHtml(item.word.toUpperCase())}</strong>
-            <p>${escapeHtml(item.definition)}</p>
+            <p>${escapeHtml(definition)}</p>
           </li>
         `;
       }

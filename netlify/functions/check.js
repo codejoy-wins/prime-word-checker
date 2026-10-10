@@ -1,4 +1,3 @@
-
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -62,15 +61,11 @@ exports.handler = async function (event) {
   const truncated = allCandidates.length > MAX_CANDIDATES;
   const candidates = allCandidates.slice(0, MAX_CANDIDATES);
 
-  const annotatedAnagrams = candidates.map(candidate => {
-    const isCommon = commonWords.has(candidate);
-
-    return {
-      word: candidate,
-      isCommon,
-      definition: isCommon ? "TOP WORD" : ""
-    };
-  });
+  const annotatedAnagrams = candidates.map(candidate => ({
+    word: candidate,
+    isCommon: commonWords.has(candidate),
+    definition: ""
+  }));
 
   return {
     statusCode: 200,
@@ -90,7 +85,6 @@ exports.handler = async function (event) {
         annotatedAnagrams[0].word === word,
       truncated,
 
-      // Reader-friendly labels for displaying results.
       resultTitle: "Results for " + word.toUpperCase(),
       letterLabel: "Alphabetized letters",
       permutationLabel: "Possible letter arrangements",

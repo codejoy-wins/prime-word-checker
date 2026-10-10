@@ -1,4 +1,3 @@
-
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -41,7 +40,7 @@ exports.handler = async function (event) {
       statusCode: 400,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        error: "Enter a word containing 2–20 English letters."
+        error: "Enter a word using 2–20 English letters, with no spaces or numbers."
       })
     };
   }
@@ -62,17 +61,11 @@ exports.handler = async function (event) {
   const truncated = allCandidates.length > MAX_CANDIDATES;
   const candidates = allCandidates.slice(0, MAX_CANDIDATES);
 
-  // This mode uses the locally bundled word lists.
-  // It does not claim to have dictionary definitions.
-const annotatedAnagrams = candidates.map(candidate => {
-  const isCommon = commonWords.has(candidate);
-
-  return {
+  const annotatedAnagrams = candidates.map(candidate => ({
     word: candidate,
-    isCommon,
-    definition: isCommon ? "TOP WORD" : ""
-  };
-});
+    isCommon: commonWords.has(candidate),
+    definition: ""
+  }));
 
   return {
     statusCode: 200,
@@ -90,7 +83,14 @@ const annotatedAnagrams = candidates.map(candidate => {
         !truncated &&
         annotatedAnagrams.length === 1 &&
         annotatedAnagrams[0].word === word,
-      truncated
+      truncated,
+
+      resultTitle: "Results for " + word.toUpperCase(),
+      letterLabel: "Alphabetized letters",
+      permutationLabel: "Possible letter arrangements",
+      wordCountLabel: "Valid words found",
+      anagramHeading: "Valid Anagrams",
+      primeLabel: "Prime Word"
     })
   };
 };
