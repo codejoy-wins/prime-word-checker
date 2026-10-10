@@ -64,11 +64,15 @@ exports.handler = async function (event) {
 
   // This mode uses the locally bundled word lists.
   // It does not claim to have dictionary definitions.
-  const annotatedAnagrams = candidates.map(candidate => ({
+const annotatedAnagrams = candidates.map(candidate => {
+  const isCommon = commonWords.has(candidate);
+
+  return {
     word: candidate,
-    isCommon: commonWords.has(candidate),
-    definition: null
-  }));
+    isCommon,
+    definition: isCommon ? "TOP WORD" : ""
+  };
+});
 
   return {
     statusCode: 200,
