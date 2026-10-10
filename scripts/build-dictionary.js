@@ -1,3 +1,4 @@
+
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -11,58 +12,61 @@ async function download(url) {
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`Download failed (${response.status}): ${url}`);
+    throw new Error(`Download failed: ${url} (${response.status})`);
   }
 
   return response.text();
 }
 
-function letterKey(word) {
-  return [...word].sort().join("");
+function normalizeWords(text) {
+  return text
+    .split(/\r?\n/)
+    .map(word => word.trim().toLowerCase())
+    .filter(word => /^[a-z]{2,20}$/.test(word));
 }
 
 async function main() {
-  console.log("Downloading word sources...");
+  console.log("Downloading word lists...");
 
-  const [wordText, commonText] = await Promise.all([
+  const [allText, commonText] = await Promise.all([
     download(WORDS_URL),
     download(COMMON_URL)
   ]);
 
-  const commonWords = new Set(
-    commonText
-      .split(/\r?\n/)
-      .map(word => word.trim().toLowerCase())
-      .filter(word => /^[a-z]+$/.test(word))
-  );
+  const words = [...new Set(normalizeWords(allText))];
+  const commonWords = [...new Set(normalizeWords(commonText))];
+  const commonSet = new Set(commonWords);
+  const anagrams = {};
 
-  const anagrams = Object.create(null);
-
-  for (const rawWord of wordText.split(/\r?\n/)) {
-    const word = rawWord.trim().toLowerCase();
-
-    if (!/^[a-z]{2,20}$/.test(word)) continue;
-
-    const key = letterKey(word);
+  for (const word of words) {
+    const key = [...word].sort().join("");
 
     if (!anagrams[key]) anagrams[key] = [];
     anagrams[key].push(word);
   }
 
-  const output = {
-    anagrams,
-    commonWords: [...commonWords]
-  };
+  for (const group of Object.values(anagrams)) {
+    group.sort((a, b) => {
+      const commonDifference =
+        Number(commonSet.has(b)) - Number(commonSet.has(a));
 
-  const outputPath = path.join(__dirname, "..", "data", "anagrams.json");
+      return commonDifference || a.localeCompare(b);
+    });
+  }
 
-  fs.writeFileSync(outputPath, JSON.stringify(output));
+  const outputDir = path.join(__dirname, "..", "data");
+  fs.mkdirSync(outputDir, { recursive: true });
 
-  console.log(`Prepared ${Object.keys(anagrams).length} letter groups.`);
-  console.log(`Saved index to ${outputPath}`);
+  fs.writeFileSync(
+    path.join(outputDir, "anagrams.json"),
+    JSON.stringify({ anagrams, commonWords })
+  );
+
+  console.log(`Built index for ${words.length} words.`);
+  console.log(`Built ${Object.keys(anagrams).length} anagram groups.`);
 }
 
 main().catch(error => {
   console.error("Dictionary build failed:", error);
-  process.exit(1);
+  process.exitCode = 1;
 });
