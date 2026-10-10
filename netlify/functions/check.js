@@ -1,3 +1,4 @@
+
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -7,16 +8,12 @@ const { anagrams, commonWords: commonList } = JSON.parse(
 );
 
 const commonWords = new Set(commonList);
-const definitionCache = new Map();
 const MAX_CANDIDATES = 60;
+const TIMEOUT_MS = 8000;
 
 function factorial(n) {
   let result = 1;
-
-  for (let i = 2; i <= n; i++) {
-    result *= i;
-  }
-
+  for (let i = 2; i <= n; i++) result *= i;
   return result;
 }
 
@@ -35,38 +32,36 @@ function totalUniquePermutations(word) {
   return result;
 }
 
-async function getDefinition(word) {
-  if (definitionCache.has(word)) {
-    return definitionCache.get(word);
-  }
+async function getDefinition(word, failures) {
+  const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`;
 
-  const promise = (async () => {
-    try {
-      const response = await fetch(
-        `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
-        { signal: AbortSignal.timeout(3500) }
-      );
+  try {
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(TIMEOUT_MS)
+    });
 
-      if (!response.ok) return null;
+    if (response.status === 404) return null;
 
-      const entries = await response.json();
-
-      for (const entry of entries) {
-        for (const meaning of entry.meanings || []) {
-          const definition = meaning.definitions?.[0]?.definition;
-
-          if (definition) return definition;
-        }
-      }
-
-      return null;
-    } catch {
+    if (!response.ok) {
+      failures[word] = `HTTP ${response.status}`;
       return null;
     }
-  })();
 
-  definitionCache.set(word, promise);
-  return promise;
+    const entries = await response.json();
+
+    for (const entry of entries) {
+      for (const meaning of entry.meanings || []) {
+        for (const item of meaning.definitions || []) {
+          if (item.definition) return item.definition;
+        }
+      }
+    }
+
+    return null;
+  } catch (error) {
+    failures[word] = error.name || "Lookup failed";
+    return null;
+  }
 }
 
 async function mapWithConcurrency(items, limit, callback) {
@@ -77,7 +72,6 @@ async function mapWithConcurrency(items, limit, callback) {
     while (true) {
       const index = nextIndex++;
       if (index >= items.length) return;
-
       results[index] = await callback(items[index]);
     }
   }
@@ -109,7 +103,6 @@ exports.handler = async function (event) {
   const key = [...word].sort().join("");
   const allCandidates = [...(anagrams[key] || [])];
 
-  // Put the searched word first, then common words, then other candidates.
   allCandidates.sort((a, b) => {
     if (a === word) return -1;
     if (b === word) return 1;
@@ -122,40 +115,50 @@ exports.handler = async function (event) {
 
   const truncated = allCandidates.length > MAX_CANDIDATES;
   const candidates = allCandidates.slice(0, MAX_CANDIDATES);
+  const failures = {};
 
-  const checked = await mapWithConcurrency(candidates, 10, async candidate => {
-    const definition = await getDefinition(candidate);
+  const checked = await mapWithConcurrency(
+    candidates,
+    3,
+    async candidate => {
+      const definition = await getDefinition(candidate, failures);
 
-    if (!definition) return null;
+      if (!definition) return null;
 
-    return {
-      word: candidate,
-      isCommon: commonWords.has(candidate),
-      definition
-    };
-  });
+      return {
+        word: candidate,
+        isCommon: commonWords.has(candidate),
+        definition
+      };
+    }
+  );
 
   const annotatedAnagrams = checked.filter(Boolean);
 
-  const isPrime =
-    !truncated &&
-    annotatedAnagrams.length === 1 &&
-    annotatedAnagrams[0].word === word;
+  const result = {
+    word,
+    sortedKey: key,
+    totalPermutations: totalUniquePermutations(word),
+    annotatedAnagrams,
+    validCount: annotatedAnagrams.length,
+    isPrime:
+      !truncated &&
+      annotatedAnagrams.length === 1 &&
+      annotatedAnagrams[0].word === word,
+    truncated
+  };
+
+  if (event.queryStringParameters?.debug === "1") {
+    result.indexCandidates = candidates;
+    result.lookupFailures = failures;
+  }
 
   return {
     statusCode: 200,
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=60"
+      "Cache-Control": "no-store"
     },
-    body: JSON.stringify({
-      word,
-      sortedKey: key,
-      totalPermutations: totalUniquePermutations(word),
-      annotatedAnagrams,
-      validCount: annotatedAnagrams.length,
-      isPrime,
-      truncated
-    })
+    body: JSON.stringify(result)
   };
 };
