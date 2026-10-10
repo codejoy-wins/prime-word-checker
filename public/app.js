@@ -1,3 +1,4 @@
+
 const form = document.getElementById("wordForm");
 const input = document.getElementById("wordInput");
 const result = document.getElementById("result");
@@ -22,7 +23,7 @@ form.addEventListener("submit", async event => {
     return;
   }
 
-  result.innerHTML = "<p>Checking anagrams and definitions…</p>";
+  result.innerHTML = "<p>Finding anagrams…</p>";
 
   try {
     const response = await fetch(
@@ -41,20 +42,20 @@ form.addEventListener("submit", async event => {
 
     let html = `
       <h2>Results for ${escapeHtml(data.word.toUpperCase())}</h2>
-      <p>Sorted letters: <strong>${escapeHtml(data.sortedKey)}</strong></p>
-      <p>Unique letter arrangements: ${data.totalPermutations.toLocaleString()}</p>
-      <p>Words with definitions found: ${data.validCount}</p>
+      <p>Alphabetized letters: <strong>${escapeHtml(data.sortedKey)}</strong></p>
+      <p>Possible letter arrangements: ${data.totalPermutations.toLocaleString()}</p>
+      <p>Valid words found: ${data.validCount}</p>
     `;
 
     if (data.isPrime) {
       html += `
         <div class="prime-banner">
           <div class="prime-title">PRIME</div>
-          <p>No other word with these letters was found in the checked dataset.</p>
+          <p>No other word with these letters was found in the checked word list.</p>
         </div>
       `;
     } else if (otherAnagrams.length) {
-      html += "<h2>Other valid anagrams</h2><ul class='anagram-list'>";
+      html += "<h2>Valid Anagrams</h2><ul class='anagram-list'>";
 
       for (const item of otherAnagrams) {
         const wordClass = item.isCommon
@@ -71,7 +72,7 @@ form.addEventListener("submit", async event => {
 
       html += "</ul>";
     } else {
-      html += "<p>No other defined anagrams were found.</p>";
+      html += "<p>No other matching words were found in the checked word list.</p>";
     }
 
     if (data.truncated) {
