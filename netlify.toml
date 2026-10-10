@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["data/anagrams.json"]
+
+[[redirects]]
+  from = "/api/check"
+  to = "/.netlify/functions/check"
+  status = 200

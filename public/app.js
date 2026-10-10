@@ -1,55 +1,89 @@
-document.getElementById('wordForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-    
-    const resultDiv = document.getElementById('result');
-    resultDiv.innerHTML = '<p class="loading">Checking your word, please wait...</p>';
-    
-    const wordInput = document.getElementById('wordInput');
-    const word = wordInput.value.trim();
-    
-    // Validate input: letters only.
-    if (!/^[a-zA-Z]+$/.test(word)) {
-      resultDiv.innerHTML = '<p class="error">Please enter a valid word (alphabetical characters only).</p>';
-      return;
+const form = document.getElementById("wordForm");
+const input = document.getElementById("wordInput");
+const result = document.getElementById("result");
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[character]);
+}
+
+form.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const word = input.value.trim();
+
+  if (!word) {
+    result.innerHTML = "<p>Please enter a word.</p>";
+    return;
+  }
+
+  result.innerHTML = "<p>Checking anagrams and definitions…</p>";
+
+  try {
+    const response = await fetch(
+      `/api/check?word=${encodeURIComponent(word)}`
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "The search could not be completed.");
     }
-    
-    fetch(`/api/check?word=${encodeURIComponent(word)}`)
-      .then(response => response.json())
-      .then(data => {
-        if (data.error) {
-          resultDiv.innerHTML = `<p class="error">Error: ${data.error}</p>`;
-          return;
-        }
-        
-        let html = `<h2>Results for "${data.word}":</h2>`;
-        html += `<p>Sorted letters: <strong>${data.sortedKey}</strong></p>`;
-        html += `<p>Total unique arrangements: <strong>${data.totalPermutations}</strong></p>`;
-        html += `<p>Number of valid English words found: <strong>${data.validCount}</strong></p>`;
-        
-        if (data.isPrime) {
-            html += `
-              <div class="prime-banner">
-                <div class="prime-title">
-                  <span class="xp">PRIME</span>
-                </div>
-                <p>Your word <strong>${data.word}</strong> has no anagrams other than itself.</p>
-              </div>`;
-          } else if (data.validCount > 0) {
-          
-          html += `<p>Legitimate anagrams (excluding your input):</p><ul class="anagram-list">`;
-          const others = data.annotatedAnagrams.filter(item => item.word !== data.word);
-          others.forEach(item => {
-            let className = item.isCommon ? 'anagram-common' : 'anagram-archaic';
-            html += `<li class="${className}"><strong>${item.word}</strong> - ${item.definition}</li>`;
-          });
-          html += `</ul>`;
-        } else {
-          html += `<p>No valid English words were found for the given letters.</p>`;
-        }
-        
-        resultDiv.innerHTML = html;
-      })
-      .catch(err => {
-        resultDiv.innerHTML = `<p class="error">Error: ${err.message}</p>`;
-      });
+
+    const otherAnagrams = data.annotatedAnagrams.filter(
+      item => item.word !== data.word
+    );
+
+    let html = `
+      <h2>Results for ${escapeHtml(data.word.toUpperCase())}</h2>
+      <p>Sorted letters: <strong>${escapeHtml(data.sortedKey)}</strong></p>
+      <p>Unique letter arrangements: ${data.totalPermutations.toLocaleString()}</p>
+      <p>Words with definitions found: ${data.validCount}</p>
+    `;
+
+    if (data.isPrime) {
+      html += `
+        <div class="prime-banner">
+          <div class="prime-title">PRIME</div>
+          <p>No other word with these letters was found in the checked dataset.</p>
+        </div>
+      `;
+    } else if (otherAnagrams.length) {
+      html += "<h2>Other valid anagrams</h2><ul class='anagram-list'>";
+
+      for (const item of otherAnagrams) {
+        const wordClass = item.isCommon
+          ? "anagram-common"
+          : "anagram-archaic";
+
+        html += `
+          <li>
+            <strong class="${wordClass}">${escapeHtml(item.word.toUpperCase())}</strong>
+            <p>${escapeHtml(item.definition)}</p>
+          </li>
+        `;
+      }
+
+      html += "</ul>";
+    } else {
+      html += "<p>No other defined anagrams were found.</p>";
+    }
+
+    if (data.truncated) {
+      html += `
+        <p>Note: This letter combination has many candidates.
+        Only the first group of candidates was checked, so results are
+        incomplete and PRIME status is withheld.</p>
+      `;
+    }
+
+    result.innerHTML = html;
+  } catch (error) {
+    result.innerHTML = `<p>${escapeHtml(error.message)}</p>`;
+  }
 });
